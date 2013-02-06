@@ -1,0 +1,3 @@
+[submodule "nrf24l01"]
+	path = nrf24l01
+	url = /home/r2d2/Projects/arm/nrf24l01
