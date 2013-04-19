@@ -1,9 +1,11 @@
-#include "../lpc2103.h"
-#include "config.h"
-#include <inttypes.h>
 #include "nrf24l01.hpp"
+
+#include <inttypes.h>
+
+#include "lpc2103.h"
+#include "config.h"
 #include "spi.hpp"
-#include "system/delay.h"
+#include "delay.h"
 
 /* Black NRF24L01+ module from Ebay:
  *
@@ -205,7 +207,7 @@ unsigned NRF24L01::read_power_detector(uint_fast8_t channel)
 #define DEBUG
 #ifdef DEBUG
 #include <string.h>
-#include <libdcc/dcc_stdio.h>
+#include <dcc_stdio.h>
 typedef struct
 {
     const char *name;

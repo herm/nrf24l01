@@ -1,1 +1,2 @@
-CPPSRC += nrf24l01.cpp
+CPPSRC += nrf24l01/nrf24l01.cpp
+EXTRAINCDIRS += nrf24l01
