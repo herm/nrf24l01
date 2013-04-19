@@ -1,10 +1,9 @@
-#include "nrf24l01.hpp"
+#include "nrf24l01.h"
 
 #include <inttypes.h>
 
-#include "lpc2103.h"
 #include "config.h"
-#include "spi.hpp"
+#include "spi.h"
 #include "delay.h"
 
 /* Black NRF24L01+ module from Ebay:
@@ -204,7 +203,7 @@ unsigned NRF24L01::read_power_detector(uint_fast8_t channel)
 }
 
 
-#define DEBUG
+//#define DEBUG
 #ifdef DEBUG
 #include <string.h>
 #include <dcc_stdio.h>

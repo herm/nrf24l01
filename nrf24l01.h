@@ -2,7 +2,7 @@
 #define NRF24L01_HPP
 
 #include <inttypes.h>
-#include <pin.hpp>
+#include "pin.h"
 
 /* https://github.com/r0ket/r0ket/blob/master/firmware/funk/nrf24l01p.h */
 // Commands
