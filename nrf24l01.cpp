@@ -145,7 +145,10 @@ uint_fast8_t NRF24L01::read_payload(uint8_t *buffer, uint8_t *pipe)
         buffer[i] = spi.write(0);
     }
     csn = 1;
-    *pipe = R_STATUS_GET_RX_P_NO(status_);
+    if (pipe)
+    {
+        *pipe = R_STATUS_GET_RX_P_NO(status_);
+    }
     return 32;
 }
 
