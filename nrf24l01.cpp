@@ -134,12 +134,14 @@ void NRF24L01::send_packet(const uint8_t *data, uint_fast8_t length)
 uint_fast8_t NRF24L01::read_payload(uint8_t *buffer, uint8_t *pipe)
 {
     //TODO: Read packet length
-    csn = 0;
-    uint8_t status_ = spi.write(C_R_RX_PAYLOAD);
+    //Note: Using the status from RX_PAYLOAD is not possible. Even if it tells you
+    // that data is available sometimes the data read will be all zeros.
+    uint8_t status_ = status();
     if ((status_ & R_STATUS_RX_FIFO_EMPTY) == R_STATUS_RX_FIFO_EMPTY) {
-        csn = 1; //Abort transfer
         return 0;
     }
+    csn = 0;
+    spi.write(C_R_RX_PAYLOAD);
     for (unsigned i=0; i<32; i++)
     {
         buffer[i] = spi.write(0);
