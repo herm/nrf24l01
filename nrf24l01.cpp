@@ -208,10 +208,9 @@ unsigned NRF24L01::read_power_detector(uint_fast8_t channel)
 }
 
 
-//#define DEBUG
 #ifdef DEBUG
 #include <string.h>
-#include <dcc_stdio.h>
+#include <debug.h>
 typedef struct
 {
     const char *name;
