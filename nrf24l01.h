@@ -68,10 +68,11 @@ public:
     void set_channel(uint_fast8_t channel);
     void set_speed_power(speed_t speed, power_t power);
     void set_tx_mac(uint8_t const* mac);
+    force_inline void set_tx_mac(char const* mac) { set_tx_mac((uint8_t const*)mac); }
     void set_rx_mac(uint_fast8_t pipe, uint8_t const* mac);
     void set_payload_length(uint_fast8_t pipe, uint_fast8_t length);
     /** delay in µs */
-    force_inline void configure_retransmit(uint_fast16_t delay, uint_fast8_t count)
+    force_inline void set_retransmit(uint_fast16_t delay, uint_fast8_t count)
     {
         /* 0 = 250µs, 1 = 500µs, always round to next higher value. */
         delay -= 1;
