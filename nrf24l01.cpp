@@ -116,6 +116,7 @@ void NRF24L01::end_receive()
     ce = 0;
 }
 
+
 void NRF24L01::send_packet(const uint8_t *data, uint_fast8_t length)
 {
     // State: Standby I or RX Mode
@@ -275,5 +276,22 @@ void NRF24L01::dump_registers()
         dbg_write_str(buffer);
         info++;
     }
+}
+
+void NRF24L01::dump_status()
+{
+    uint8_t s = status();
+    dbg_write_str("--------- STATUS ---------");
+    dbg_write_str("Data Ready RX IRQ: ", false);
+    dbg_write_bool(s & R_STATUS_RX_DR);
+    dbg_write_str("Data Sent TX IRQ: ", false);
+    dbg_write_bool(s & R_STATUS_TX_DS);
+    dbg_write_str("Max RT IRQ: ", false);
+    dbg_write_bool(s & R_STATUS_MAX_RT);
+    dbg_write_str("TX fifo full: ", false);
+    dbg_write_bool(s & R_STATUS_TX_FULL);
+    dbg_write_str("Pipe: ", false);
+    dbg_write_bool(s & R_STATUS_RX_DR);
+    dbg_write_str("--------------------------");
 }
 #endif

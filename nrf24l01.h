@@ -91,6 +91,7 @@ public:
 
     unsigned read_power_detector(uint_fast8_t channel);
     void dump_registers();
+    void dump_status();
 private:
     SPI &spi;
     DigitalOut csn;
