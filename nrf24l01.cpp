@@ -6,14 +6,6 @@
 #include "spi.h"
 #include "delay.h"
 
-/* Black NRF24L01+ module from Ebay:
- *
- *   GND (marked)   1   2   VDD
- *             CE   3   4   CSN
- *            SCK   5   6   MOSI
- *           MISO   7   8   IRQ
- */
-
 // Register Flags
 
 //CONFIG register definitions
@@ -47,7 +39,8 @@
 #define R_STATUS_RX_FIFO_EMPTY   0x0E
 #define R_STATUS_TX_FULL         0x01
 
-NRF24L01::NRF24L01(SPI &spi_, const DigitalOut &csn_, const DigitalOut &ce_) : spi(spi_), csn(csn_), ce(ce_), config(R_CONFIG_PWR_UP | R_CONFIG_CRC_1BYTE)
+NRF24L01::NRF24L01(SPI &spi_, const DigitalOut &csn_, const DigitalOut &ce_) : spi(spi_), csn(csn_), ce(ce_), config(R_CONFIG_PWR_UP | R_CONFIG_CRC_1BYTE | R_CONFIG_EN_CRC |
+       R_CONFIG_MASK_MAX_RT | R_CONFIG_MASK_RX_DR | R_CONFIG_MASK_TX_DS)
 {
     csn = 1;
     ce = 0;
@@ -104,7 +97,8 @@ uint_fast8_t NRF24L01::status()
 void NRF24L01::start_receive()
 {
     // State: Standby I
-    write_reg(R_CONFIG, config | R_CONFIG_PRIM_RX);
+    config |= R_CONFIG_PRIM_RX;
+    write_reg(R_CONFIG, config);
     write(C_FLUSH_RX);
     write_reg(R_STATUS, 0x70); //Clear all status bits
     ce = 1;
@@ -119,6 +113,7 @@ void NRF24L01::end_receive()
 
 void NRF24L01::send_packet(const uint8_t *data, uint_fast8_t length)
 {
+    config &= ~R_CONFIG_PRIM_RX;
     // State: Standby I or RX Mode
     ce = 0;
     // State: Standby I, unknown config

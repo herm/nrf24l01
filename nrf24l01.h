@@ -54,6 +54,13 @@ public:
         dBm_0 = 0x06
     } power_t;
 
+    typedef enum
+    {
+        irq_rx = 0x40,
+        irq_tx = 0x20,
+        irq_max_rt = 0x10,
+    }
+
     NRF24L01(SPI &spi_, DigitalOut const &csn, DigitalOut const &ce);
     void write_reg(uint_fast8_t reg_nr, uint_fast8_t data);
     void write(uint_fast8_t command, uint_fast8_t size, const uint8_t* data);
@@ -85,6 +92,19 @@ public:
     {
         write_reg(R_EN_AA, pipes & 0b00111111);
     }
+
+    force_inline void enable_interrupts(uint8_t interrupts)
+    {
+        config &= ~interrupts; //nrf24l01 uses inverted logic: 1 = interrupt disabled
+        write_reg(R_CONFIG, config);
+    }
+
+    force_inline void disable_interrupts(uint8_t interrupts)
+    {
+        config |= interrupts; //nrf24l01 uses inverted logic: 1 = interrupt disabled
+        write_reg(R_CONFIG, config);
+    }
+
     uint_fast8_t read_retransmit_counter();
     /* Returns true on success. */
     bool wait_transmit_complete();
