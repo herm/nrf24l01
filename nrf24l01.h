@@ -35,6 +35,8 @@
 #define R_FIFO_STATUS   0x17
 #define R_DYNPD			0x1c
 
+#define R_STATUS_RX_FIFO_EMPTY   0x0E
+
 class SPI;
 class NRF24L01
 {
@@ -58,8 +60,8 @@ public:
     {
         irq_rx = 0x40,
         irq_tx = 0x20,
-        irq_max_rt = 0x10,
-    }
+        irq_max_rt = 0x10
+    } irq_t;
 
     NRF24L01(SPI &spi_, DigitalOut const &csn, DigitalOut const &ce);
     void write_reg(uint_fast8_t reg_nr, uint_fast8_t data);
@@ -112,6 +114,11 @@ public:
     unsigned read_power_detector(uint_fast8_t channel);
     void dump_registers();
     void dump_status();
+
+    force_inline bool data_ready()
+    {
+        return !(status() & R_STATUS_RX_FIFO_EMPTY);
+    }
 private:
     SPI &spi;
     DigitalOut csn;
