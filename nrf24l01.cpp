@@ -46,6 +46,7 @@ NRF24L01::NRF24L01(SPI &spi_, const DigitalOut &csn_, const DigitalOut &ce_) : s
     ce = 0;
     write_reg(R_CONFIG, config); //Power up (max. 4ms)
     write_reg(R_EN_AA, 0); //Disable auto-ack for now
+    write_reg(R_EN_RXADDR, 1); //Always enable pipe 0
     write_reg(R_SETUP_AW, R_SETUP_AW_5); // 5 byte adresses
     set_speed_power(s2M, dBm_0);
     write_reg(R_STATUS, R_STATUS_MAX_RT);

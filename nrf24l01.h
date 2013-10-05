@@ -90,9 +90,15 @@ public:
         if (count > 15) count = 15;
         write_reg(R_SETUP_RETR, delay << 4 | count);
     }
+
     force_inline void set_autoack(uint_fast8_t pipes)
     {
         write_reg(R_EN_AA, pipes & 0b00111111);
+    }
+
+    force_inline void set_enabled_pipes(uint_fast8_t pipes)
+    {
+        write_reg(R_EN_RXADDR, pipes & 0b00111111);
     }
 
     force_inline void enable_interrupts(uint8_t interrupts)
@@ -106,6 +112,7 @@ public:
         config |= interrupts; //nrf24l01 uses inverted logic: 1 = interrupt disabled
         write_reg(R_CONFIG, config);
     }
+
 
     uint_fast8_t read_retransmit_counter();
     /* Returns true on success. */
