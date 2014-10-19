@@ -4,38 +4,97 @@
 #include <inttypes.h>
 #include "pin.h"
 
-/* https://github.com/r0ket/r0ket/blob/master/firmware/funk/nrf24l01p.h */
-// Commands
-#define C_R_REGISTER        0x00
-#define C_W_REGISTER        0x20
-#define C_R_RX_PAYLOAD      0x61
-#define C_W_TX_PAYLOAD      0xA0
-#define C_FLUSH_TX          0xE1
-#define C_FLUSH_RX          0xE2
-#define C_REUSE_TX_PL       0xE3
-#define C_R_RX_PL_WID       0x60
-#define C_W_ACK_PAYLOAD     0xA8
-#define C_W_TX_PAYLOAD_NOCACK	0xB0
-#define C_NOP			0xFF
+namespace NRF24L01_CMD
+{
+enum {
+R_REGISTER              = 0x00,
+W_REGISTER              = 0x20,
+R_RX_PAYLOAD            = 0x61,
+W_TX_PAYLOAD            = 0xA0,
+FLUSH_TX                = 0xE1,
+FLUSH_RX                = 0xE2,
+REUSE_TX_PL             = 0xE3,
+R_RX_PL_WID             = 0x60,
+W_ACK_PAYLOAD           = 0xA8,
+W_TX_PAYLOAD_NOCACK     = 0xB0,
+NOP                     = 0xFF
+};
+} //NRF24L01_CMD
 
-// Registers
-#define R_CONFIG        0x00
-#define R_EN_AA         0x01
-#define R_EN_RXADDR     0x02
-#define R_SETUP_AW      0x03
-#define R_SETUP_RETR    0x04
-#define R_RF_CH         0x05
-#define R_RF_SETUP      0x06
-#define R_STATUS        0x07
-#define R_OBSERVE_TX    0x08
-#define R_RPD           0x09
-#define R_RX_ADDR_BASE  0x0A
-#define R_TX_ADDR		0x10
-#define R_RX_PW_BASE    0x11
-#define R_FIFO_STATUS   0x17
-#define R_DYNPD			0x1c
+namespace NRF24L01_REG
+{
+enum{
+CONFIG        = 0x00,
+EN_AA         = 0x01,
+EN_RXADDR     = 0x02,
+SETUP_AW      = 0x03,
+SETUP_RETR    = 0x04,
+RF_CH         = 0x05,
+RF_SETUP      = 0x06,
+STATUS        = 0x07,
+OBSERVE_TX    = 0x08,
+RPD           = 0x09,
+RX_ADDR_BASE  = 0x0A,
+TX_ADDR       = 0x10,
+RX_PW_BASE    = 0x11,
+FIFO_STATUS   = 0x17,
+DYNPD		  = 0x1c,
+FEATURE       = 0x1d
+};
+} //NRF24L01_REG
 
-#define R_STATUS_RX_FIFO_EMPTY   0x0E
+namespace NRF24L01_FEATURE
+{
+enum {
+EN_DPL          = 0b100,
+EN_ACK_PAY      = 0b010,
+EN_DYN_ACK      = 0b001
+};
+} //NRF24L01_FEATURE
+
+//CONFIG register definitions
+namespace NRF24L01_CONFIG
+{
+enum {
+MASK_RX_DR      = 0x40,
+MASK_TX_DS      = 0x20,
+MASK_MAX_RT     = 0x10,
+EN_CRC          = 0x08,
+CRC0            = 0x04,
+CRC_1BYTE       = EN_CRC,
+CRC_2BYTE       = EN_CRC|CRC0,
+CRC_OFF         = 0,
+PWR_UP          = 0x02,
+PRIM_RX         = 0x01,
+};
+} //NRF24L01_CONFIG
+
+
+//STATUS register definitions
+namespace NRF24L01_STATUS
+{
+enum {
+RX_DR           = 0x40,
+TX_DS           = 0x20,
+MAX_RT          = 0x10,
+RX_P_NO         = 0x0E,
+RX_FIFO_EMPTY   = 0x0E,
+TX_FULL         = 0x01,
+};
+
+force_inline static inline uint8_t get_rx_pipe_number(uint8_t status)
+{
+    return (status & RX_P_NO) >> 1;
+}
+} //NRF24L01_STATUS
+
+namespace NRF24L01_AW
+{
+force_inline static inline uint8_t address_width(uint8_t bytes)
+{
+    return bytes - 2;
+}
+}
 
 class SPI;
 class NRF24L01
@@ -88,29 +147,40 @@ public:
         delay /= 250;
         if (delay > 15) delay = 15;
         if (count > 15) count = 15;
-        write_reg(R_SETUP_RETR, delay << 4 | count);
+        write_reg(NRF24L01_REG::SETUP_RETR, delay << 4 | count);
     }
 
     force_inline void set_autoack(uint_fast8_t pipes)
     {
-        write_reg(R_EN_AA, pipes & 0b00111111);
+        write_reg(NRF24L01_REG::EN_AA, pipes & 0b00111111);
     }
 
     force_inline void set_enabled_pipes(uint_fast8_t pipes)
     {
-        write_reg(R_EN_RXADDR, pipes & 0b00111111);
+        write_reg(NRF24L01_REG::EN_RXADDR, pipes & 0b00111111);
     }
 
     force_inline void enable_interrupts(uint8_t interrupts)
     {
         config &= ~interrupts; //nrf24l01 uses inverted logic: 1 = interrupt disabled
-        write_reg(R_CONFIG, config);
+        write_reg(NRF24L01_REG::CONFIG, config);
     }
 
     force_inline void disable_interrupts(uint8_t interrupts)
     {
         config |= interrupts; //nrf24l01 uses inverted logic: 1 = interrupt disabled
-        write_reg(R_CONFIG, config);
+        write_reg(NRF24L01_REG::CONFIG, config);
+    }
+
+    /* Note: You must also call set_autoack for these pipes. */
+    force_inline void set_dyn_payload_length(uint_fast8_t pipes)
+    {
+        write_reg(NRF24L01_REG::DYNPD, pipes & 0b00111111);
+        if (pipes)
+        {
+            //Enable all enhanced shockburst
+            write_reg(NRF24L01_REG::FEATURE, NRF24L01_FEATURE::EN_DPL | NRF24L01_FEATURE::EN_DYN_ACK | NRF24L01_FEATURE::EN_ACK_PAY);
+        }
     }
 
 
@@ -124,7 +194,7 @@ public:
 
     force_inline bool data_ready()
     {
-        return !(status() & R_STATUS_RX_FIFO_EMPTY);
+        return !(status() & NRF24L01_STATUS::RX_FIFO_EMPTY);
     }
 private:
     SPI &spi;
