@@ -82,7 +82,7 @@ RX_FIFO_EMPTY   = 0x0E,
 TX_FULL         = 0x01,
 };
 
-force_inline static inline uint8_t get_rx_pipe_number(uint8_t status)
+static force_inline uint8_t get_rx_pipe_number(uint8_t status)
 {
     return (status & RX_P_NO) >> 1;
 }
@@ -90,7 +90,7 @@ force_inline static inline uint8_t get_rx_pipe_number(uint8_t status)
 
 namespace NRF24L01_AW
 {
-force_inline static inline uint8_t address_width(uint8_t bytes)
+static force_inline uint8_t address_width(uint8_t bytes)
 {
     return bytes - 2;
 }
@@ -130,9 +130,9 @@ public:
     uint_fast8_t status();
     void start_receive();
     void end_receive();
-    void send_packet(const uint8_t* data, uint_fast8_t length);
-    /** Returns pipe number of bytes read or 0 if no packet is available. Buffer must be long enough for the packet. 32 Bytes is always enough. */
-    uint_fast8_t read_payload(uint8_t *buffer, uint8_t *pipe=0);
+    void send_packet(const void *data, uint_fast8_t length);
+    /** Returns number of bytes read or 0 if no packet is available. Buffer must be long enough for the packet. 32 Bytes is always enough. */
+    uint_fast8_t read_payload(void *buffer, uint8_t length);
     void set_channel(uint_fast8_t channel);
     void set_speed_power(speed_t speed, power_t power);
     void set_tx_mac(uint8_t const* mac);
