@@ -10,12 +10,20 @@
 // Register Flags
 
 
-
-NRF24L01::NRF24L01(SPI &spi_, const DigitalOut &csn_, const DigitalOut &ce_) : spi(spi_), csn(csn_), ce(ce_), config(
-    NRF24L01_CONFIG::PWR_UP | NRF24L01_CONFIG::CRC_2BYTE | NRF24L01_CONFIG::EN_CRC)
+#ifndef NRF24L01_STATIC
+NRF24L01::NRF24L01(SPI &spi_, const DigitalOut &csn_, const DigitalOut &ce_) : spi(spi_), csn(csn_), ce(ce_)
+#ifndef NRF24L01_READBACK_CONFIG
+  , config_(NRF24L01_DEFAULT_CONFIG)
+#endif
 {
-    csn = 1;
-    ce = 0;
+    init();
+}
+#endif
+
+void NRF24L01::init() NRF24L01_STATIC_CONST__
+{
+    csn1();
+    ce0();
     #define enabled_pipes 0b000001
 #if 1
 #ifndef PROGMEM
@@ -24,7 +32,7 @@ NRF24L01::NRF24L01(SPI &spi_, const DigitalOut &csn_, const DigitalOut &ce_) : s
 #endif
     static const uint8_t register_values[] PROGMEM =
     {
-        NRF24L01_CONFIG::PWR_UP | NRF24L01_CONFIG::CRC_2BYTE | NRF24L01_CONFIG::EN_CRC, //config
+        NRF24L01_DEFAULT_CONFIG,
         enabled_pipes, //ENAA
         enabled_pipes, //EN_RXADDR,
         0b11,     //AW = 5
@@ -53,82 +61,75 @@ NRF24L01::NRF24L01(SPI &spi_, const DigitalOut &csn_, const DigitalOut &ce_) : s
 #endif
 }
 
-void NRF24L01::write_reg(uint_fast8_t reg_nr, uint_fast8_t data)
+void NRF24L01::write_reg(uint_fast8_t reg_nr, uint_fast8_t data) NRF24L01_STATIC_CONST__
 {
-    csn = 0;
-    spi.write(NRF24L01_CMD::W_REGISTER | reg_nr);
-    spi.write(data);
-    csn = 1;
+    csn0();
+    spiwrite(NRF24L01_CMD::W_REGISTER | reg_nr);
+    spiwrite(data);
+    csn1();
 }
 
-void NRF24L01::write(uint_fast8_t command, uint_fast8_t size, const uint8_t *data)
+void NRF24L01::write(uint_fast8_t command, uint_fast8_t size, const uint8_t *data) NRF24L01_STATIC_CONST__
 {
-    csn = 0;
-    spi.write(command);
+    csn0();
+    spiwrite(command);
     while (size--) {
-        spi.write(*data++);
+        spiwrite(*data++);
     }
-    csn = 1;
+    csn1();
 }
 
-void NRF24L01::write(uint_fast8_t command)
+void NRF24L01::write(uint_fast8_t command) NRF24L01_STATIC_CONST__
 {
-    csn = 0;
-    spi.write(command);
-    csn = 1;
+    csn0();
+    spiwrite(command);
+    csn1();
 }
 
-uint8_t NRF24L01::read_reg(uint_fast8_t reg_nr)
+uint8_t NRF24L01::read_reg(uint_fast8_t reg_nr) NRF24L01_STATIC_CONST__
 {
-    csn = 0;
-    spi.write(NRF24L01_CMD::R_REGISTER | reg_nr);
-    uint8_t result = spi.write(0);
-    csn = 1;
+    csn0();
+    spiwrite(NRF24L01_CMD::R_REGISTER | reg_nr);
+    uint8_t result = spiwrite(0);
+    csn1();
     return result;
 }
 
-uint_fast8_t NRF24L01::status()
+uint_fast8_t NRF24L01::status() NRF24L01_STATIC_CONST__
 {
-    csn = 0;
-    uint_fast8_t result = spi.write(NRF24L01_CMD::NOP);
-    csn = 1;
+    csn0();
+    uint_fast8_t result = spiwrite(NRF24L01_CMD::NOP);
+    csn1();
     return result;
 }
 
 void NRF24L01::start_receive()
 {
     // State: Standby I
-    config |= NRF24L01_CONFIG::PRIM_RX;
-    write_reg(NRF24L01_REG::CONFIG, config);
+    set_config(get_config() | NRF24L01_CONFIG::PRIM_RX);
     write(NRF24L01_CMD::FLUSH_RX);
     write_reg(NRF24L01_REG::STATUS, 0x70); //Clear all status bits
-    ce = 1;
+    ce1();
     // State: RX settling (130µs) => RX Mode
-}
-
-void NRF24L01::end_receive()
-{
-    ce = 0;
 }
 
 
 void NRF24L01::send_packet(const void *data, uint_fast8_t length)
 {
-    config &= ~NRF24L01_CONFIG::PRIM_RX;
     // State: Standby I or RX Mode
-    ce = 0;
+    ce0();
     // State: Standby I, unknown config
-    write_reg(NRF24L01_REG::CONFIG, config);
+    set_config(get_config() & ~NRF24L01_CONFIG::PRIM_RX);
     // State: Standby I, TX config
     write_reg(NRF24L01_REG::STATUS, NRF24L01_STATUS::MAX_RT | NRF24L01_STATUS::TX_DS); //Clear MAX_RT bit
     write(NRF24L01_CMD::W_TX_PAYLOAD, length, (const uint8_t*)data);
-    ce = 1;
+    ce1();
     delay_us(10);
-    ce = 0;
+    ce0();
     // State: TX Mode followed by Standby I
 }
 
-uint_fast8_t NRF24L01::read_payload(void *buffer, uint8_t length)
+uint_fast8_t NRF24L01::read_payload(void *buffer, uint8_t length) NRF24L01_STATIC_CONST__
 {
     uint8_t *buf = reinterpret_cast<uint8_t *>(buffer);
     //Note: Using the status from RX_PAYLOAD is not possible. Even if it tells you
@@ -140,75 +141,75 @@ uint_fast8_t NRF24L01::read_payload(void *buffer, uint8_t length)
     }
     if (length == 0)
     {
-        csn = 0;
-        spi.write(NRF24L01_CMD::R_RX_PL_WID);
-        length = spi.write(0);
-        csn = 1;
+        csn0();
+        spiwrite(NRF24L01_CMD::R_RX_PL_WID);
+        length = spiwrite(0);
+        csn1();
         if (length > 32)
         {
-            csn = 0;
-            spi.write(NRF24L01_CMD::FLUSH_RX);
-            csn = 1;
+            csn0();
+            spiwrite(NRF24L01_CMD::FLUSH_RX);
+            csn1();
             return 0;
         }
     }
-    csn = 0;
-    spi.write(NRF24L01_CMD::R_RX_PAYLOAD);
+    csn0();
+    spiwrite(NRF24L01_CMD::R_RX_PAYLOAD);
     for (unsigned i=0; i<length; i++)
     {
-        buf[i] = spi.write(0);
+        buf[i] = spiwrite(0);
     }
-    csn = 1;
+    csn1();
     return length;
 }
 
 
-void NRF24L01::set_channel(uint_fast8_t channel)
+void NRF24L01::set_channel(uint_fast8_t channel) NRF24L01_STATIC_CONST__
 {
     write_reg(NRF24L01_REG::RF_CH, channel);
 }
 
-void NRF24L01::set_speed_power(NRF24L01::speed_t speed, NRF24L01::power_t power)
+void NRF24L01::set_speed_power(NRF24L01::speed_t speed, NRF24L01::power_t power) NRF24L01_STATIC_CONST__
 {
     write_reg(NRF24L01_REG::RF_SETUP, speed | power);
 }
 
-void NRF24L01::set_tx_mac(const uint8_t *mac)
+void NRF24L01::set_tx_mac(const uint8_t *mac) NRF24L01_STATIC_CONST__
 {
     write(NRF24L01_CMD::W_REGISTER | NRF24L01_REG::TX_ADDR, 5, mac);
     /* Also listen on the same address for ACK packets. */
     write(NRF24L01_CMD::W_REGISTER | NRF24L01_REG::RX_ADDR_BASE, 5, mac);
 }
 
-void NRF24L01::set_rx_mac(uint_fast8_t pipe, const uint8_t *mac)
+void NRF24L01::set_rx_mac(uint_fast8_t pipe, const uint8_t *mac) NRF24L01_STATIC_CONST__
 {
     write(NRF24L01_CMD::W_REGISTER | (NRF24L01_REG::RX_ADDR_BASE + pipe), pipe <= 1 ? 5 : 1, mac);
 }
 
-void NRF24L01::set_payload_length(uint_fast8_t pipe, uint_fast8_t length)
+void NRF24L01::set_payload_length(uint_fast8_t pipe, uint_fast8_t length) NRF24L01_STATIC_CONST__
 {
     write_reg(NRF24L01_REG::RX_PW_BASE + pipe, length);
 }
 
-uint_fast8_t NRF24L01::read_retransmit_counter()
+uint_fast8_t NRF24L01::read_retransmit_counter() NRF24L01_STATIC_CONST__
 {
     return read_reg(NRF24L01_REG::OBSERVE_TX) & 0b1111;
 }
 
-bool NRF24L01::wait_transmit_complete()
+bool NRF24L01::wait_transmit_complete() NRF24L01_STATIC_CONST__
 {
     //TODO: Timeout?
     while (!(status() & (NRF24L01_STATUS::MAX_RT | NRF24L01_STATUS::TX_DS)));
     return !(status() & NRF24L01_STATUS::MAX_RT);
 }
 
-unsigned NRF24L01::read_power_detector(uint_fast8_t channel)
+unsigned NRF24L01::read_power_detector(uint_fast8_t channel) NRF24L01_STATIC_CONST__
 {
     write_reg(NRF24L01_REG::CONFIG, NRF24L01_CONFIG::PWR_UP | NRF24L01_CONFIG::PRIM_RX);
     set_channel(channel);
-    ce = 1;
+    ce1();
     delay_us(200); //minimum = 170
-    ce = 0;
+    ce0();
     return read_reg(NRF24L01_REG::RPD);
 }
 
@@ -267,15 +268,15 @@ void NRF24L01::dump_registers()
         strcpy(buffer, info->name);
         pos = buffer + strlen(info->name);
         *pos++ = ' ';
-        csn = 0;
-        spi.write(NRF24L01_CMD::R_REGISTER | info->regnr);
+        csn0();
+        spiwrite(NRF24L01_CMD::R_REGISTER | info->regnr);
         for (int i=0; i<info->length; i++)
         {
-            to_hex(pos, spi.write(0));
+            to_hex(pos, spiwrite(0));
             pos += 2;
             *pos++ = ' ';
         }
-        csn = 1;
+        csn1();
         *pos=0;
         dbg_write_str(buffer);
         info++;

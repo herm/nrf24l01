@@ -1,8 +1,21 @@
 #ifndef NRF24L01_HPP
 #define NRF24L01_HPP
 
+/* Possible defines:
+ * NRF24L01_STATIC: Make all functions static to reduce code size. Implies that the SPI module is static as well.
+ * NRF24L01_PORT_CE:  Required for NRF24L01_STATIC
+ * NRF24L01_PIN_CE:   Required for NRF24L01_STATIC
+ * NRF24L01_PORT_CSN: Required for NRF24L01_STATIC
+ * NRF24L01_PIN_CSN:  Required for NRF24L01_STATIC
+ * NRF24L01_READBACK_CONFIG: Don't store a copy of the current config in ram.
+ * NRF24L01_STATIC_CONFIG: Smaller variant compared to READBACK_CONFIG, but doesn't allow enabling or disabling IRQs at runtime.
+ * NRF24L01_DEFAULT_CONFIG: Default config options
+ */
+
 #include <inttypes.h>
+#include "config.h"
 #include "pin.h"
+#include "spi.h"
 
 namespace NRF24L01_CMD
 {
@@ -96,7 +109,19 @@ static force_inline uint8_t address_width(uint8_t bytes)
 }
 }
 
-class SPI;
+#ifndef NRF24L01_DEFAULT_CONFIG
+#define NRF24L01_DEFAULT_CONFIG (NRF24L01_CONFIG::PWR_UP | NRF24L01_CONFIG::CRC_2BYTE | NRF24L01_CONFIG::EN_CRC)
+#endif
+
+#ifdef NRF24L01_STATIC
+#define NRF24L01_STATIC__ static
+#define NRF24L01_STATIC_CONST__
+#define NRF24L01_STATIC_CONFIG
+#else
+#define NRF24L01_STATIC__
+#define NRF24L01_STATIC_CONST__ const
+#endif
+
 class NRF24L01
 {
 public:
@@ -122,25 +147,28 @@ public:
         irq_max_rt = 0x10
     } irq_t;
 
+#ifndef NRF24L01_STATIC
     NRF24L01(SPI &spi_, DigitalOut const &csn, DigitalOut const &ce);
-    void write_reg(uint_fast8_t reg_nr, uint_fast8_t data);
-    void write(uint_fast8_t command, uint_fast8_t size, const uint8_t* data);
-    void write(uint_fast8_t command);
-    uint8_t read_reg(uint_fast8_t reg_nr);
-    uint_fast8_t status();
-    void start_receive();
-    void end_receive();
-    void send_packet(const void *data, uint_fast8_t length);
+#endif
+    NRF24L01_STATIC__ void init() NRF24L01_STATIC_CONST__;
+    NRF24L01_STATIC__ void write_reg(uint_fast8_t reg_nr, uint_fast8_t data) NRF24L01_STATIC_CONST__;
+    NRF24L01_STATIC__ void write(uint_fast8_t command, uint_fast8_t size, const uint8_t* data) NRF24L01_STATIC_CONST__;
+    NRF24L01_STATIC__ void write(uint_fast8_t command) NRF24L01_STATIC_CONST__;
+    NRF24L01_STATIC__ uint8_t read_reg(uint_fast8_t reg_nr) NRF24L01_STATIC_CONST__;
+    NRF24L01_STATIC__ uint_fast8_t status() NRF24L01_STATIC_CONST__;
+    NRF24L01_STATIC__ void start_receive();
+    NRF24L01_STATIC__ force_inline void end_receive() NRF24L01_STATIC_CONST__ { ce0(); }
+    NRF24L01_STATIC__ void send_packet(const void *data, uint_fast8_t length);
     /** Returns number of bytes read or 0 if no packet is available. Buffer must be long enough for the packet. 32 Bytes is always enough. */
-    uint_fast8_t read_payload(void *buffer, uint8_t length);
-    void set_channel(uint_fast8_t channel);
-    void set_speed_power(speed_t speed, power_t power);
-    void set_tx_mac(uint8_t const* mac);
-    force_inline void set_tx_mac(char const* mac) { set_tx_mac((uint8_t const*)mac); }
-    void set_rx_mac(uint_fast8_t pipe, uint8_t const* mac);
-    void set_payload_length(uint_fast8_t pipe, uint_fast8_t length);
+    NRF24L01_STATIC__ uint_fast8_t read_payload(void *buffer, uint8_t length) NRF24L01_STATIC_CONST__;
+    NRF24L01_STATIC__ void set_channel(uint_fast8_t channel) NRF24L01_STATIC_CONST__;
+    NRF24L01_STATIC__ void set_speed_power(speed_t speed, power_t power) NRF24L01_STATIC_CONST__;
+    NRF24L01_STATIC__ void set_tx_mac(uint8_t const* mac) NRF24L01_STATIC_CONST__;
+    NRF24L01_STATIC__ force_inline void set_tx_mac(char const* mac) NRF24L01_STATIC_CONST__ { set_tx_mac((uint8_t const*)mac); }
+    NRF24L01_STATIC__ void set_rx_mac(uint_fast8_t pipe, uint8_t const* mac) NRF24L01_STATIC_CONST__;
+    NRF24L01_STATIC__ void set_payload_length(uint_fast8_t pipe, uint_fast8_t length) NRF24L01_STATIC_CONST__;
     /** delay in µs */
-    force_inline void set_retransmit(uint_fast16_t delay, uint_fast8_t count)
+    NRF24L01_STATIC__ force_inline void set_retransmit(uint_fast16_t delay, uint_fast8_t count) NRF24L01_STATIC_CONST__
     {
         /* 0 = 250µs, 1 = 500µs, always round to next higher value. */
         delay -= 1;
@@ -150,30 +178,52 @@ public:
         write_reg(NRF24L01_REG::SETUP_RETR, delay << 4 | count);
     }
 
-    force_inline void set_autoack(uint_fast8_t pipes)
+    NRF24L01_STATIC__ force_inline void set_autoack(uint_fast8_t pipes) NRF24L01_STATIC_CONST__
     {
         write_reg(NRF24L01_REG::EN_AA, pipes & 0b00111111);
     }
 
-    force_inline void set_enabled_pipes(uint_fast8_t pipes)
+    NRF24L01_STATIC__ force_inline void set_enabled_pipes(uint_fast8_t pipes) NRF24L01_STATIC_CONST__
     {
         write_reg(NRF24L01_REG::EN_RXADDR, pipes & 0b00111111);
     }
 
-    force_inline void enable_interrupts(uint8_t interrupts)
+    NRF24L01_STATIC__ force_inline uint8_t get_config() NRF24L01_STATIC_CONST__
     {
-        config &= ~interrupts; //nrf24l01 uses inverted logic: 1 = interrupt disabled
+#if defined(NRF24L01_STATIC_CONFIG)
+        return NRF24L01_DEFAULT_CONFIG;
+#elif defined(NRF24L01_READBACK_CONFIG)
+        return read_reg(NRF24L01_REG::CONFIG);
+#else
+        return config_;
+#endif
+    }
+
+    NRF24L01_STATIC__ force_inline void set_config(uint8_t config)
+    {
+#if !defined(NRF24L01_STATIC_CONFIG) && !defined(NRF24L01_READBACK_CONFIG)
+        config_ = config;
+#endif
         write_reg(NRF24L01_REG::CONFIG, config);
     }
 
-    force_inline void disable_interrupts(uint8_t interrupts)
+
+#ifndef NRF24L01_STATIC_CONFIG
+    NRF24L01_STATIC__ force_inline void enable_interrupts(uint8_t interrupts)
     {
-        config |= interrupts; //nrf24l01 uses inverted logic: 1 = interrupt disabled
-        write_reg(NRF24L01_REG::CONFIG, config);
+        //nrf24l01 uses inverted logic: 1 = interrupt disabled
+        set_config(get_config() & ~interrupts);
     }
+
+    NRF24L01_STATIC__ force_inline void disable_interrupts(uint8_t interrupts)
+    {
+        //nrf24l01 uses inverted logic: 1 = interrupt disabled
+        set_config(get_config() | ~interrupts);
+    }
+#endif
 
     /* Note: You must also call set_autoack for these pipes. */
-    force_inline void set_dyn_payload_length(uint_fast8_t pipes)
+    NRF24L01_STATIC__ force_inline void set_dyn_payload_length(uint_fast8_t pipes)
     {
         write_reg(NRF24L01_REG::DYNPD, pipes & 0b00111111);
         if (pipes)
@@ -184,23 +234,41 @@ public:
     }
 
 
-    uint_fast8_t read_retransmit_counter();
+    NRF24L01_STATIC__ uint_fast8_t read_retransmit_counter() NRF24L01_STATIC_CONST__;
     /* Returns true on success. */
-    bool wait_transmit_complete();
+    NRF24L01_STATIC__ bool wait_transmit_complete() NRF24L01_STATIC_CONST__;
 
-    unsigned read_power_detector(uint_fast8_t channel);
-    void dump_registers();
-    void dump_status();
+    NRF24L01_STATIC__ unsigned read_power_detector(uint_fast8_t channel) NRF24L01_STATIC_CONST__;
+    NRF24L01_STATIC__ void dump_registers();
+    NRF24L01_STATIC__ void dump_status();
 
-    force_inline bool data_ready()
+    NRF24L01_STATIC__ force_inline bool data_ready()
     {
         return !(status() & NRF24L01_STATUS::RX_FIFO_EMPTY);
     }
+
+#ifdef NRF24L01_STATIC
+    static force_inline void ce0() { NRF24L01_PORT_CE &= ~ _BV(NRF24L01_PIN_CE); }
+    static force_inline void ce1() { NRF24L01_PORT_CE |= _BV(NRF24L01_PIN_CE); }
+    static force_inline void csn0() { NRF24L01_PORT_CSN &= ~ _BV(NRF24L01_PIN_CSN); }
+    static force_inline void csn1() { NRF24L01_PORT_CSN |= _BV(NRF24L01_PIN_CSN); }
+    static force_inline uint8_t spiwrite(uint8_t data) { return SPI::write(data); }
+#else
+    force_inline void ce0() const { ce = 0; }
+    force_inline void ce1() const { ce = 1; }
+    force_inline void csn0() const { csn = 0; }
+    force_inline void csn1() const { csn = 1; }
+    force_inline uint8_t spiwrite(uint8_t data) const { return spi.write(data); }
+#endif
 private:
+#if !defined(NRF24L01_STATIC)
     SPI &spi;
     DigitalOut csn;
     DigitalOut ce;
-    uint8_t config;
+#endif
+#if !defined(NRF24L01_READBACK_CONFIG) && !defined(NRF24L01_STATIC_CONFIG)
+    uint8_t config_;
+#endif
 };
 
 #endif // NRF24L01_HPP
