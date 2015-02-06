@@ -107,7 +107,7 @@ void NRF24L01::start_receive()
 {
     // State: Standby I
     set_config(get_config() | NRF24L01_CONFIG::PRIM_RX);
-    write(NRF24L01_CMD::FLUSH_RX);
+    flush_rx();
     write_reg(NRF24L01_REG::STATUS, 0x70); //Clear all status bits
     ce1();
     // State: RX settling (130µs) => RX Mode
@@ -120,6 +120,7 @@ void NRF24L01::send_packet(const void *data, uint_fast8_t length)
     ce0();
     // State: Standby I, unknown config
     set_config(get_config() & ~NRF24L01_CONFIG::PRIM_RX);
+    flush_tx();
     // State: Standby I, TX config
     write_reg(NRF24L01_REG::STATUS, NRF24L01_STATUS::MAX_RT | NRF24L01_STATUS::TX_DS); //Clear MAX_RT bit
     write(NRF24L01_CMD::W_TX_PAYLOAD, length, (const uint8_t*)data);
@@ -147,9 +148,7 @@ uint_fast8_t NRF24L01::read_payload(void *buffer, uint8_t length) NRF24L01_STATI
         csn1();
         if (length > 32)
         {
-            csn0();
-            spiwrite(NRF24L01_CMD::FLUSH_RX);
-            csn1();
+            flush_rx();
             return 0;
         }
     }
@@ -287,6 +286,8 @@ void NRF24L01::dump_status()
 {
     uint8_t s = status();
     dbg_write_str("--------- STATUS ---------");
+    dbg_write_str("Config:", false);
+    dbg_write_u8(read_reg(NRF24L01_REG::CONFIG));
     dbg_write_str("Data Ready RX IRQ: ", false);
     dbg_write_bool(s & NRF24L01_STATUS::RX_DR);
     dbg_write_str("Data Sent TX IRQ: ", false);
@@ -296,7 +297,7 @@ void NRF24L01::dump_status()
     dbg_write_str("TX fifo full: ", false);
     dbg_write_bool(s & NRF24L01_STATUS::TX_FULL);
     dbg_write_str("Pipe: ", false);
-    dbg_write_bool(s & NRF24L01_STATUS::RX_DR);
+    dbg_write_u8((s & NRF24L01_STATUS::RX_P_NO) >> 1);
     dbg_write_str("--------------------------");
 }
 #endif

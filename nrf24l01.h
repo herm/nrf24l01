@@ -188,6 +188,17 @@ public:
         write_reg(NRF24L01_REG::EN_RXADDR, pipes & 0b00111111);
     }
 
+    NRF24L01_STATIC__ force_inline void flush_tx() NRF24L01_STATIC_CONST__
+    {
+        write(NRF24L01_CMD::FLUSH_TX);
+    }
+
+    NRF24L01_STATIC__ force_inline void flush_rx() NRF24L01_STATIC_CONST__
+    {
+        write(NRF24L01_CMD::FLUSH_RX);
+    }
+
+
     NRF24L01_STATIC__ force_inline uint8_t get_config() NRF24L01_STATIC_CONST__
     {
 #if defined(NRF24L01_STATIC_CONFIG)
