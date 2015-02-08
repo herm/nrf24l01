@@ -109,6 +109,8 @@ static force_inline uint8_t address_width(uint8_t bytes)
 }
 }
 
+#define NRF24L01_MAX_PAYLOAD_LENGTH 32
+
 #ifndef NRF24L01_DEFAULT_CONFIG
 #define NRF24L01_DEFAULT_CONFIG (NRF24L01_CONFIG::PWR_UP | NRF24L01_CONFIG::CRC_2BYTE | NRF24L01_CONFIG::EN_CRC)
 #endif
@@ -160,7 +162,7 @@ public:
     NRF24L01_STATIC__ force_inline void end_receive() NRF24L01_STATIC_CONST__ { ce0(); }
     NRF24L01_STATIC__ void send_packet(const void *data, uint_fast8_t length);
     /** Returns number of bytes read or 0 if no packet is available. Buffer must be long enough for the packet. 32 Bytes is always enough. */
-    NRF24L01_STATIC__ uint_fast8_t read_payload(void *buffer, uint8_t length) NRF24L01_STATIC_CONST__;
+    NRF24L01_STATIC__ uint_fast8_t read_payload(void *buffer, uint8_t length=0) NRF24L01_STATIC_CONST__;
     NRF24L01_STATIC__ void set_channel(uint_fast8_t channel) NRF24L01_STATIC_CONST__;
     NRF24L01_STATIC__ void set_speed_power(speed_t speed, power_t power) NRF24L01_STATIC_CONST__;
     NRF24L01_STATIC__ void set_tx_mac(uint8_t const* mac) NRF24L01_STATIC_CONST__;
