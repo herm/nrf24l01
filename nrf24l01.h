@@ -260,6 +260,9 @@ public:
     NRF24L01_STATIC__ uint_fast8_t read_retransmit_counter() NRF24L01_STATIC_CONST__;
     /* Returns true on success. */
     NRF24L01_STATIC__ bool wait_transmit_complete() NRF24L01_STATIC_CONST__;
+    NRF24L01_STATIC__ void  wait_transmit_complete_no_status() NRF24L01_STATIC_CONST__ {
+    while (!(status() & (NRF24L01_STATUS::MAX_RT | NRF24L01_STATUS::TX_DS)));
+    }
 
     NRF24L01_STATIC__ unsigned read_power_detector(uint_fast8_t channel) NRF24L01_STATIC_CONST__;
     NRF24L01_STATIC__ void dump_registers();
