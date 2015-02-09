@@ -69,7 +69,7 @@ void NRF24L01::write_reg(uint_fast8_t reg_nr, uint_fast8_t data) NRF24L01_STATIC
     csn1();
 }
 
-void NRF24L01::write(uint_fast8_t command, uint_fast8_t size, const uint8_t *data) NRF24L01_STATIC_CONST__
+void NRF24L01::write(uint_fast8_t command, uint_fast8_t size, const char *data) NRF24L01_STATIC_CONST__
 {
     csn0();
     spiwrite(command);
@@ -123,14 +123,18 @@ void NRF24L01::send_packet(const void *data, uint_fast8_t length)
     flush_tx();
     // State: Standby I, TX config
     write_reg(NRF24L01_REG::STATUS, NRF24L01_STATUS::MAX_RT | NRF24L01_STATUS::TX_DS); //Clear MAX_RT bit
-    write(NRF24L01_CMD::W_TX_PAYLOAD, length, (const uint8_t*)data);
+    write(NRF24L01_CMD::W_TX_PAYLOAD, length, (const char*)data);
     ce1();
     delay_us(10);
     ce0();
     // State: TX Mode followed by Standby I
 }
 
+#ifdef NRF24L01_ONLY_DYN_PLD
+uint_fast8_t NRF24L01::read_payload(void *buffer) NRF24L01_STATIC_CONST__
+#else
 uint_fast8_t NRF24L01::read_payload(void *buffer, uint8_t length) NRF24L01_STATIC_CONST__
+#endif
 {
     uint8_t *buf = reinterpret_cast<uint8_t *>(buffer);
     //Note: Using the status from RX_PAYLOAD is not possible. Even if it tells you
@@ -140,8 +144,13 @@ uint_fast8_t NRF24L01::read_payload(void *buffer, uint8_t length) NRF24L01_STATI
     if ((status_ & NRF24L01_STATUS::RX_FIFO_EMPTY) == NRF24L01_STATUS::RX_FIFO_EMPTY) {
         return 0;
     }
+#ifdef NRF24L01_ONLY_DYN_PLD
+    uint8_t length;
+    {
+#else
     if (length == 0)
     {
+#endif
         csn0();
         spiwrite(NRF24L01_CMD::R_RX_PL_WID);
         length = spiwrite(0);
@@ -173,14 +182,8 @@ void NRF24L01::set_speed_power(NRF24L01::speed_t speed, NRF24L01::power_t power)
     write_reg(NRF24L01_REG::RF_SETUP, speed | power);
 }
 
-void NRF24L01::set_tx_mac(const uint8_t *mac) NRF24L01_STATIC_CONST__
-{
-    write(NRF24L01_CMD::W_REGISTER | NRF24L01_REG::TX_ADDR, 5, mac);
-    /* Also listen on the same address for ACK packets. */
-    write(NRF24L01_CMD::W_REGISTER | NRF24L01_REG::RX_ADDR_BASE, 5, mac);
-}
 
-void NRF24L01::set_rx_mac(uint_fast8_t pipe, const uint8_t *mac) NRF24L01_STATIC_CONST__
+void NRF24L01::set_rx_mac(uint_fast8_t pipe, const char *mac) NRF24L01_STATIC_CONST__
 {
     write(NRF24L01_CMD::W_REGISTER | (NRF24L01_REG::RX_ADDR_BASE + pipe), pipe <= 1 ? 5 : 1, mac);
 }
@@ -198,8 +201,12 @@ uint_fast8_t NRF24L01::read_retransmit_counter() NRF24L01_STATIC_CONST__
 bool NRF24L01::wait_transmit_complete() NRF24L01_STATIC_CONST__
 {
     //TODO: Timeout?
-    while (!(status() & (NRF24L01_STATUS::MAX_RT | NRF24L01_STATUS::TX_DS)));
-    return !(status() & NRF24L01_STATUS::MAX_RT);
+    uint8_t status_;
+    do
+    {
+        status_ = status();
+    } while (!(status_ & (NRF24L01_STATUS::MAX_RT | NRF24L01_STATUS::TX_DS)));
+    return ~(status_ & NRF24L01_STATUS::MAX_RT);
 }
 
 unsigned NRF24L01::read_power_detector(uint_fast8_t channel) NRF24L01_STATIC_CONST__

@@ -124,6 +124,8 @@ static force_inline uint8_t address_width(uint8_t bytes)
 #define NRF24L01_STATIC_CONST__ const
 #endif
 
+#define NRF24L01_ONLY_DYN_PLD
+
 class NRF24L01
 {
 public:
@@ -154,7 +156,7 @@ public:
 #endif
     NRF24L01_STATIC__ void init() NRF24L01_STATIC_CONST__;
     NRF24L01_STATIC__ void write_reg(uint_fast8_t reg_nr, uint_fast8_t data) NRF24L01_STATIC_CONST__;
-    NRF24L01_STATIC__ void write(uint_fast8_t command, uint_fast8_t size, const uint8_t* data) NRF24L01_STATIC_CONST__;
+    NRF24L01_STATIC__ void write(uint_fast8_t command, uint_fast8_t size, const char* data) NRF24L01_STATIC_CONST__;
     NRF24L01_STATIC__ void write(uint_fast8_t command) NRF24L01_STATIC_CONST__;
     NRF24L01_STATIC__ uint8_t read_reg(uint_fast8_t reg_nr) NRF24L01_STATIC_CONST__;
     NRF24L01_STATIC__ uint_fast8_t status() NRF24L01_STATIC_CONST__;
@@ -162,12 +164,20 @@ public:
     NRF24L01_STATIC__ force_inline void end_receive() NRF24L01_STATIC_CONST__ { ce0(); }
     NRF24L01_STATIC__ void send_packet(const void *data, uint_fast8_t length);
     /** Returns number of bytes read or 0 if no packet is available. Buffer must be long enough for the packet. 32 Bytes is always enough. */
+#ifdef NRF24L01_ONLY_DYN_PLD
+    NRF24L01_STATIC__ uint_fast8_t read_payload(void *buffer) NRF24L01_STATIC_CONST__;
+#else
     NRF24L01_STATIC__ uint_fast8_t read_payload(void *buffer, uint8_t length=0) NRF24L01_STATIC_CONST__;
+#endif
     NRF24L01_STATIC__ void set_channel(uint_fast8_t channel) NRF24L01_STATIC_CONST__;
     NRF24L01_STATIC__ void set_speed_power(speed_t speed, power_t power) NRF24L01_STATIC_CONST__;
-    NRF24L01_STATIC__ void set_tx_mac(uint8_t const* mac) NRF24L01_STATIC_CONST__;
-    NRF24L01_STATIC__ force_inline void set_tx_mac(char const* mac) NRF24L01_STATIC_CONST__ { set_tx_mac((uint8_t const*)mac); }
-    NRF24L01_STATIC__ void set_rx_mac(uint_fast8_t pipe, uint8_t const* mac) NRF24L01_STATIC_CONST__;
+    NRF24L01_STATIC__ void set_tx_mac(char const* mac) NRF24L01_STATIC_CONST__
+    {
+        write(NRF24L01_CMD::W_REGISTER | NRF24L01_REG::TX_ADDR, 5, mac);
+        /* Also listen on the same address for ACK packets. */
+        write(NRF24L01_CMD::W_REGISTER | NRF24L01_REG::RX_ADDR_BASE, 5, mac);
+    }
+    NRF24L01_STATIC__ void set_rx_mac(uint_fast8_t pipe, char const* mac) NRF24L01_STATIC_CONST__;
     NRF24L01_STATIC__ void set_payload_length(uint_fast8_t pipe, uint_fast8_t length) NRF24L01_STATIC_CONST__;
     /** delay in µs */
     NRF24L01_STATIC__ force_inline void set_retransmit(uint_fast16_t delay, uint_fast8_t count) NRF24L01_STATIC_CONST__
