@@ -177,7 +177,10 @@ public:
         /* Also listen on the same address for ACK packets. */
         write(NRF24L01_CMD::W_REGISTER | NRF24L01_REG::RX_ADDR_BASE, 5, mac);
     }
-    NRF24L01_STATIC__ void set_rx_mac(uint_fast8_t pipe, char const* mac) NRF24L01_STATIC_CONST__;
+    NRF24L01_STATIC__ void set_rx_mac(uint_fast8_t pipe, char const* mac) NRF24L01_STATIC_CONST__
+    {
+        write(NRF24L01_CMD::W_REGISTER | (NRF24L01_REG::RX_ADDR_BASE + pipe), pipe <= 1 ? 5 : 1, mac);
+    }
     NRF24L01_STATIC__ void set_payload_length(uint_fast8_t pipe, uint_fast8_t length) NRF24L01_STATIC_CONST__;
     /** delay in µs */
     NRF24L01_STATIC__ force_inline void set_retransmit(uint_fast16_t delay, uint_fast8_t count) NRF24L01_STATIC_CONST__

@@ -24,17 +24,22 @@ void NRF24L01::init() NRF24L01_STATIC_CONST__
 {
     csn1();
     ce0();
-    #define enabled_pipes 0b000001
+#ifndef nrf_enabled_pipes
+    #define nrf_enabled_pipes 0b000011
+#endif
 #if 1
 #ifndef PROGMEM
 #define PROGMEM
 #define pgm_read_byte(x) (*(x))
 #endif
+    //Pipe 0 is only used to receive auto-ack packets so
+    // mask it when setting ENAA, as receiving auto-ack
+    // works even when sending is disabled
     static const uint8_t register_values[] PROGMEM =
     {
         NRF24L01_DEFAULT_CONFIG,
-        enabled_pipes, //ENAA
-        enabled_pipes, //EN_RXADDR,
+        nrf_enabled_pipes & 0xFE, //ENAA
+        nrf_enabled_pipes, //EN_RXADDR,
         0b11,     //AW = 5
         0xff,     //15 retransmits, 4ms wait
         nrf_channel,
@@ -45,20 +50,19 @@ void NRF24L01::init() NRF24L01_STATIC_CONST__
     {
         write_reg(i, pgm_read_byte(&(register_values[i])));
     }
-    write_reg(NRF24L01_REG::FEATURE, NRF24L01_FEATURE::EN_DPL | NRF24L01_FEATURE::EN_DYN_ACK | NRF24L01_FEATURE::EN_ACK_PAY);
-    write_reg(NRF24L01_REG::DYNPD, enabled_pipes);
 #else
     write_reg(NRF24L01_REG::CONFIG, config); //Power up (max. 4ms)
-    write_reg(NRF24L01_REG::EN_AA, enabled_pipes); //Disable auto-ack for now
-    write_reg(NRF24L01_REG::EN_RXADDR, enabled_pipes); //Always enable pipe 0
+    write_reg(NRF24L01_REG::EN_AA, nrf_enabled_pipes); //Disable auto-ack for now
+    write_reg(NRF24L01_REG::EN_RXADDR, nrf_enabled_pipes); //Always enable pipe 0
     write_reg(NRF24L01_REG::SETUP_AW, NRF24L01_AW::address_width(5)); // 5 byte adresses
     write_reg(NRF24L01_REG::STATUS, NRF24L01_STATUS::MAX_RT);
     write_reg(NRF24L01_REG::RF_CH, nrf_channel);
     set_speed_power(s2M, dBm_0);
-    write_reg(NRF24L01_REG::FEATURE, NRF24L01_FEATURE::EN_DPL | NRF24L01_FEATURE::EN_DYN_ACK | NRF24L01_FEATURE::EN_ACK_PAY);
-    write_reg(NRF24L01_REG::DYNPD, enabled_pipes);
-    //State: Standby I
 #endif
+    write_reg(NRF24L01_REG::FEATURE, NRF24L01_FEATURE::EN_DPL /*| NRF24L01_FEATURE::EN_DYN_ACK | NRF24L01_FEATURE::EN_ACK_PAY */);
+    write_reg(NRF24L01_REG::DYNPD, nrf_enabled_pipes);
+    //State: Standby I
+
 }
 
 void NRF24L01::write_reg(uint_fast8_t reg_nr, uint_fast8_t data) NRF24L01_STATIC_CONST__
@@ -108,7 +112,7 @@ void NRF24L01::start_receive()
     // State: Standby I
     set_config(get_config() | NRF24L01_CONFIG::PRIM_RX);
     flush_rx();
-    write_reg(NRF24L01_REG::STATUS, 0x70); //Clear all status bits
+    write_reg(NRF24L01_REG::STATUS, NRF24L01_STATUS::MAX_RT | NRF24L01_STATUS::RX_DR | NRF24L01_STATUS::TX_DS); //Clear all status bits
     ce1();
     // State: RX settling (130µs) => RX Mode
 }
@@ -182,12 +186,6 @@ void NRF24L01::set_speed_power(NRF24L01::speed_t speed, NRF24L01::power_t power)
     write_reg(NRF24L01_REG::RF_SETUP, speed | power);
 }
 
-
-void NRF24L01::set_rx_mac(uint_fast8_t pipe, const char *mac) NRF24L01_STATIC_CONST__
-{
-    write(NRF24L01_CMD::W_REGISTER | (NRF24L01_REG::RX_ADDR_BASE + pipe), pipe <= 1 ? 5 : 1, mac);
-}
-
 void NRF24L01::set_payload_length(uint_fast8_t pipe, uint_fast8_t length) NRF24L01_STATIC_CONST__
 {
     write_reg(NRF24L01_REG::RX_PW_BASE + pipe, length);
@@ -241,9 +239,11 @@ static const reg_info_t registers[] = {
     {"RX_ADDR0", 0x0A, 5},
     {"RX_ADDR1", 0x0B, 5},
     {"TX_ADDR", 0x10, 5},
-    {"RW_PW0", 0x11, 1},
-    {"RW_PW1", 0x12, 1},
+    {"RX_PW0", 0x11, 1},
+    {"RX_PW1", 0x12, 1},
+    {"FIFO", 0x17, 1},
     {"DYNPD", 0x1C, 1},
+    {"FEATURE", 0x1D, 1},
     {0, 0, 0}
 };
 
