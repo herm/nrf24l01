@@ -32,14 +32,12 @@ void NRF24L01::init() NRF24L01_STATIC_CONST__
 #define PROGMEM
 #define pgm_read_byte(x) (*(x))
 #endif
-    //Pipe 0 is only used to receive auto-ack packets so
-    // mask it when setting ENAA, as receiving auto-ack
-    // works even when sending is disabled
+    // Pipe 0 is only used for receiving
     static const uint8_t register_values[] PROGMEM =
     {
         NRF24L01_DEFAULT_CONFIG,
-        nrf_enabled_pipes & 0xFE, //ENAA
-        nrf_enabled_pipes, //EN_RXADDR,
+        nrf_enabled_pipes, //ENAA
+        nrf_enabled_pipes & 0xFE, //EN_RXADDR,
         0b11,     //AW = 5
         0xff,     //15 retransmits, 4ms wait
         nrf_channel,
@@ -51,11 +49,11 @@ void NRF24L01::init() NRF24L01_STATIC_CONST__
         write_reg(i, pgm_read_byte(&(register_values[i])));
     }
 #else
-    write_reg(NRF24L01_REG::CONFIG, config); //Power up (max. 4ms)
-    write_reg(NRF24L01_REG::EN_AA, nrf_enabled_pipes); //Disable auto-ack for now
-    write_reg(NRF24L01_REG::EN_RXADDR, nrf_enabled_pipes); //Always enable pipe 0
-    write_reg(NRF24L01_REG::SETUP_AW, NRF24L01_AW::address_width(5)); // 5 byte adresses
-    write_reg(NRF24L01_REG::STATUS, NRF24L01_STATUS::MAX_RT);
+    write_reg(NRF24L01_REG::CONFIG, NRF24L01_DEFAULT_CONFIG); //Power up (max. 4ms)
+    write_reg(NRF24L01_REG::EN_AA, nrf_enabled_pipes);
+    write_reg(NRF24L01_REG::EN_RXADDR, nrf_enabled_pipes & 0xFE);
+    write_reg(NRF24L01_REG::SETUP_AW, NRF24L01_AW::address_width(5));
+    write_reg(NRF24L01_REG::STATUS, NRF24L01_STATUS::MAX_RT| NRF24L01_STATUS::RX_DR | NRF24L01_STATUS::TX_DS);
     write_reg(NRF24L01_REG::RF_CH, nrf_channel);
     set_speed_power(s2M, dBm_0);
 #endif
@@ -111,6 +109,7 @@ void NRF24L01::start_receive()
 {
     // State: Standby I
     set_config(get_config() | NRF24L01_CONFIG::PRIM_RX);
+    write_reg(NRF24L01_REG::EN_RXADDR, nrf_enabled_pipes & 0xFE); //Reenable all pipes, but disable pipe 0 (undo changes from send_packet)
     flush_rx();
     write_reg(NRF24L01_REG::STATUS, NRF24L01_STATUS::MAX_RT | NRF24L01_STATUS::RX_DR | NRF24L01_STATUS::TX_DS); //Clear all status bits
     ce1();
@@ -125,6 +124,7 @@ void NRF24L01::send_packet(const void *data, uint_fast8_t length)
     // State: Standby I, unknown config
     set_config(get_config() & ~NRF24L01_CONFIG::PRIM_RX);
     flush_tx();
+    write_reg(NRF24L01_REG::EN_RXADDR, 1); //Enable pipe 0  in transmit mode only to avoid receiving packets send to our destination address
     // State: Standby I, TX config
     write_reg(NRF24L01_REG::STATUS, NRF24L01_STATUS::MAX_RT | NRF24L01_STATUS::TX_DS); //Clear MAX_RT bit
     write(NRF24L01_CMD::W_TX_PAYLOAD, length, (const char*)data);
@@ -204,7 +204,7 @@ bool NRF24L01::wait_transmit_complete() NRF24L01_STATIC_CONST__
     {
         status_ = status();
     } while (!(status_ & (NRF24L01_STATUS::MAX_RT | NRF24L01_STATUS::TX_DS)));
-    return ~(status_ & NRF24L01_STATUS::MAX_RT);
+    return status_ & NRF24L01_STATUS::TX_DS;
 }
 
 unsigned NRF24L01::read_power_detector(uint_fast8_t channel) NRF24L01_STATIC_CONST__
