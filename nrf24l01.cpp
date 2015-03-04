@@ -27,40 +27,46 @@ void NRF24L01::init() NRF24L01_STATIC_CONST__
 #ifndef nrf_enabled_pipes
     #define nrf_enabled_pipes 0b000011
 #endif
-#if 1
 #ifndef PROGMEM
 #define PROGMEM
 #define pgm_read_byte(x) (*(x))
 #endif
-    // Pipe 0 is only used for receiving
-    static const uint8_t register_values[] PROGMEM =
-    {
-        NRF24L01_DEFAULT_CONFIG,
-        nrf_enabled_pipes, //ENAA
-        nrf_enabled_pipes & 0xFE, //EN_RXADDR,
-        0b11,     //AW = 5
-        0xff,     //15 retransmits, 4ms wait
-        nrf_channel,
-        s2M|dBm_0,
-        NRF24L01_STATUS::MAX_RT | NRF24L01_STATUS::RX_DR | NRF24L01_STATUS::TX_DS //clear flags
-    };
-    for (unsigned i = 0; i < sizeof(register_values); i++)
-    {
-        write_reg(i, pgm_read_byte(&(register_values[i])));
-    }
+    /* We want the fastest possible startup time, therefore we write
+     the config register till the bits finally stick. This is important
+     in bootloader applications where the normal 100ms delay would be
+     much longer than the actual check for new firmware. */
+    do {
+#if 1
+        // Pipe 0 is only used for receiving
+        static const uint8_t register_values[] PROGMEM =
+        {
+            NRF24L01_DEFAULT_CONFIG,
+            nrf_enabled_pipes, //ENAA
+            nrf_enabled_pipes & 0xFE, //EN_RXADDR,
+            0b11,     //AW = 5
+            0xff,     //15 retransmits, 4ms wait
+            nrf_channel,
+            s2M|dBm_0,
+            NRF24L01_STATUS::MAX_RT | NRF24L01_STATUS::RX_DR | NRF24L01_STATUS::TX_DS //clear flags
+        };
+        for (unsigned i = 0; i < sizeof(register_values); i++)
+        {
+            write_reg(i, pgm_read_byte(&(register_values[i])));
+        }
 #else
-    write_reg(NRF24L01_REG::CONFIG, NRF24L01_DEFAULT_CONFIG); //Power up (max. 4ms)
-    write_reg(NRF24L01_REG::EN_AA, nrf_enabled_pipes);
-    write_reg(NRF24L01_REG::EN_RXADDR, nrf_enabled_pipes & 0xFE);
-    write_reg(NRF24L01_REG::SETUP_AW, NRF24L01_AW::address_width(5));
-    write_reg(NRF24L01_REG::STATUS, NRF24L01_STATUS::MAX_RT| NRF24L01_STATUS::RX_DR | NRF24L01_STATUS::TX_DS);
-    write_reg(NRF24L01_REG::RF_CH, nrf_channel);
-    set_speed_power(s2M, dBm_0);
+        write_reg(NRF24L01_REG::CONFIG, NRF24L01_DEFAULT_CONFIG); //Power up (max. 4ms)
+        write_reg(NRF24L01_REG::EN_AA, nrf_enabled_pipes);
+        write_reg(NRF24L01_REG::EN_RXADDR, nrf_enabled_pipes & 0xFE);
+        write_reg(NRF24L01_REG::SETUP_AW, NRF24L01_AW::address_width(5));
+        write_reg(NRF24L01_REG::STATUS, NRF24L01_STATUS::MAX_RT| NRF24L01_STATUS::RX_DR | NRF24L01_STATUS::TX_DS);
+        write_reg(NRF24L01_REG::RF_CH, nrf_channel);
+        set_speed_power(s2M, dBm_0);
 #endif
-    write_reg(NRF24L01_REG::FEATURE, NRF24L01_FEATURE::EN_DPL /*| NRF24L01_FEATURE::EN_DYN_ACK | NRF24L01_FEATURE::EN_ACK_PAY */);
-    write_reg(NRF24L01_REG::DYNPD, nrf_enabled_pipes);
-    //State: Standby I
-
+        write_reg(NRF24L01_REG::FEATURE, NRF24L01_FEATURE::EN_DPL /*| NRF24L01_FEATURE::EN_DYN_ACK | NRF24L01_FEATURE::EN_ACK_PAY */);
+        write_reg(NRF24L01_REG::DYNPD, nrf_enabled_pipes);
+        //State: Standby I
+        delay_ms(5);
+    } while (read_reg(NRF24L01_REG::CONFIG) != NRF24L01_DEFAULT_CONFIG);
 }
 
 void NRF24L01::write_reg(uint_fast8_t reg_nr, uint_fast8_t data) NRF24L01_STATIC_CONST__
