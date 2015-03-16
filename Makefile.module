@@ -1,2 +1,2 @@
-CPPSRC += nrf24l01/nrf24l01.cpp
+CPPSRC += nrf24l01/nrf24l01.cpp nrf24l01/tinyudp.cpp
 EXTRAINCDIRS += nrf24l01
