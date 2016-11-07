@@ -2,6 +2,9 @@
 #define TINYUDP_H
 #include "nrf24l01.h"
 
+#define user_flags (0x0f)
+#define protocol_flags (~user_flags)
+
 extern char mac[6];
 
 struct __attribute__ ((__packed__)) __attribute__((__may_alias__)) tiny_udp_packet
@@ -22,5 +25,12 @@ static inline void init_udp()
 }
 
 bool send_udp_packet(tiny_udp_packet &buf, uint8_t ip, uint8_t port);
+void send_udp_packet_nowait(tiny_udp_packet &buf, uint8_t ip, uint8_t port);
+
+/** Receive an UDP packet in buf.
+ * Note: This function might modify buf even if no valid packet is received!
+ * Only rely on data in buf if this function returns true.
+ */
+bool receive_udp_packet(tiny_udp_packet &buf, uint8_t min_size);
 
 #endif // TINYUDP_H
