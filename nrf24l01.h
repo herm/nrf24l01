@@ -154,7 +154,7 @@ public:
 #ifndef NRF24L01_STATIC
     NRF24L01(SPI &spi_, DigitalOut const &csn, DigitalOut const &ce);
 #endif
-    NRF24L01_STATIC__ void init() NRF24L01_STATIC_CONST__;
+    NRF24L01_STATIC__ uint8_t init() NRF24L01_STATIC_CONST__;
     NRF24L01_STATIC__ void write_reg(uint_fast8_t reg_nr, uint_fast8_t data) NRF24L01_STATIC_CONST__;
     NRF24L01_STATIC__ void write(uint_fast8_t command, uint_fast8_t size, const char* data) NRF24L01_STATIC_CONST__;
     NRF24L01_STATIC__ void write(uint_fast8_t command) NRF24L01_STATIC_CONST__;

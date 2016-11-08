@@ -6,6 +6,7 @@
 #include "spi.h"
 #include "delay.h"
 #include "utils.h" //PROGMEM
+#include "debug.h"
 
 // Register Flags
 
@@ -20,7 +21,7 @@ NRF24L01::NRF24L01(SPI &spi_, const DigitalOut &csn_, const DigitalOut &ce_) : s
 }
 #endif
 
-void NRF24L01::init() NRF24L01_STATIC_CONST__
+uint8_t NRF24L01::init() NRF24L01_STATIC_CONST__
 {
     csn1();
     ce0();
@@ -30,6 +31,9 @@ void NRF24L01::init() NRF24L01_STATIC_CONST__
 #ifndef PROGMEM
 #define PROGMEM
 #define pgm_read_byte(x) (*(x))
+#endif
+#ifdef NRF24L01_MAX_RETRIES
+    uint8_t retrys_left = NRF24L01_MAX_RETRIES + 1;
 #endif
     /* We want the fastest possible startup time, therefore we write
      the config register till the bits finally stick. This is important
@@ -66,7 +70,15 @@ void NRF24L01::init() NRF24L01_STATIC_CONST__
         write_reg(NRF24L01_REG::DYNPD, nrf_enabled_pipes);
         //State: Standby I
         delay_ms(5);
+        #ifdef NRF24L01_MAX_RETRIES
+        if (!retrys_left) {
+            return 1;
+        } else {
+            retrys_left--;
+        }
+        #endif
     } while (read_reg(NRF24L01_REG::CONFIG) != NRF24L01_DEFAULT_CONFIG);
+    return 0;
 }
 
 void NRF24L01::write_reg(uint_fast8_t reg_nr, uint_fast8_t data) NRF24L01_STATIC_CONST__
