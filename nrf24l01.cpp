@@ -284,6 +284,7 @@ static inline void to_hex(char *buffer, uint8_t value)
 
 void NRF24L01::dump_registers()
 {
+    dbg_write_str("---");
     const reg_info_t *info = registers;
     char buffer[50];
     char *pos;
