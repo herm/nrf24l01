@@ -273,7 +273,7 @@ public:
 
     NRF24L01_STATIC__ force_inline bool data_ready()
     {
-        return !(status() & NRF24L01_STATUS::RX_FIFO_EMPTY);
+        return (status() & NRF24L01_STATUS::RX_FIFO_EMPTY) != NRF24L01_STATUS::RX_FIFO_EMPTY;
     }
 
 #ifdef NRF24L01_STATIC
