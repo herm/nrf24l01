@@ -1,6 +1,10 @@
 #ifndef TINYUDP_H
 #define TINYUDP_H
 #include "nrf24l01.h"
+#ifndef device_ip
+#define device_ip 0
+#warning "No device IP defined. Using default of 0"
+#endif
 
 #define user_flags (0x0f)
 #define protocol_flags (~user_flags)

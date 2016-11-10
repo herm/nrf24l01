@@ -1,3 +1,4 @@
+#ifdef TINY_UDP_ENABLED
 #include "tinyudp.h"
 #include "config.h"
 
@@ -38,3 +39,4 @@ bool receive_udp_packet(tiny_udp_packet &buf, uint8_t min_size)
     buf.size = size - (sizeof(tiny_udp_packet) - sizeof(buf.size));
     return true;
 }
+#endif
