@@ -1,6 +1,7 @@
+#include "config.h"
+
 #ifdef TINY_UDP_ENABLED
 #include "tinyudp.h"
-#include "config.h"
 
 char mac[6] = nrf_mac;
 
