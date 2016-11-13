@@ -10,12 +10,10 @@ static force_inline void send_udp_packet_internal(tiny_udp_packet &buf, uint8_t 
 {
     mac[0] = ip;
     NRF24L01::set_tx_mac(mac);
-#ifdef device_ip
     buf.source_ip = device_ip;
-#endif
     buf.dest_ip = ip;
     buf.ports = port;
-    buf.flags &= 0x0f;
+    buf.flags &= user_flags;
     NRF24L01::send_packet(&(buf.source_ip), buf.size + sizeof(tiny_udp_packet) -  sizeof(buf.size));
 }
 

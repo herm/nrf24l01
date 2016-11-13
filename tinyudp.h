@@ -1,9 +1,11 @@
 #ifndef TINYUDP_H
 #define TINYUDP_H
+#include "config.h"
+
+#ifdef TINY_UDP_ENABLED
 #include "nrf24l01.h"
 #ifndef device_ip
-#define device_ip 0
-#warning "No device IP defined. Using default of 0"
+#warning "No device_ip defined. Compilation will fail"
 #endif
 
 #define user_flags (0x0f)
@@ -36,5 +38,5 @@ void send_udp_packet_nowait(tiny_udp_packet &buf, uint8_t ip, uint8_t port);
  * Only rely on data in buf if this function returns true.
  */
 bool receive_udp_packet(tiny_udp_packet &buf, uint8_t min_size);
-
+#endif
 #endif // TINYUDP_H
