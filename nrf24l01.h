@@ -252,11 +252,6 @@ public:
     NRF24L01_STATIC__ force_inline void set_dyn_payload_length(uint_fast8_t pipes)
     {
         write_reg(NRF24L01_REG::DYNPD, pipes & 0b00111111);
-        if (pipes)
-        {
-            //Enable all enhanced shockburst features
-            write_reg(NRF24L01_REG::FEATURE, NRF24L01_FEATURE::EN_DPL | NRF24L01_FEATURE::EN_DYN_ACK | NRF24L01_FEATURE::EN_ACK_PAY);
-        }
     }
 
 
