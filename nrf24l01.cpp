@@ -46,7 +46,7 @@ uint8_t NRF24L01::init() NRF24L01_STATIC_CONST__
         {
             NRF24L01_DEFAULT_CONFIG,
             nrf_enabled_pipes, //ENAA
-            nrf_enabled_pipes & 0xFE, //EN_RXADDR,
+            nrf_enabled_pipes, //EN_RXADDR,
             0b11,     //AW = 5
             0xff,     //15 retransmits, 4ms wait
             nrf_channel,
@@ -127,7 +127,6 @@ void NRF24L01::start_receive()
 {
     // State: Standby I
     set_config(get_config() | NRF24L01_CONFIG::PRIM_RX);
-    write_reg(NRF24L01_REG::EN_RXADDR, nrf_enabled_pipes & 0xFE); //Reenable all pipes, but disable pipe 0 (undo changes from send_packet)
     flush_rx();
     write_reg(NRF24L01_REG::STATUS, NRF24L01_STATUS::MAX_RT | NRF24L01_STATUS::RX_DR | NRF24L01_STATUS::TX_DS); //Clear all status bits
     ce1();
@@ -142,7 +141,6 @@ void NRF24L01::send_packet(const void *data, uint_fast8_t length)
     // State: Standby I, unknown config
     set_config(get_config() & ~NRF24L01_CONFIG::PRIM_RX);
     flush_tx();
-    write_reg(NRF24L01_REG::EN_RXADDR, 1); //Enable pipe 0  in transmit mode only to avoid receiving packets send to our destination address
     // State: Standby I, TX config
     write_reg(NRF24L01_REG::STATUS, NRF24L01_STATUS::MAX_RT | NRF24L01_STATUS::TX_DS); //Clear MAX_RT bit
     write(NRF24L01_CMD::W_TX_PAYLOAD, length, (const char*)data);
