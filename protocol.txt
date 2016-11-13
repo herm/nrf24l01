@@ -1,0 +1,29 @@
+UDP Message:
+Byte, Description:
+0: Source
+1: Destination
+2: Ports
+3: Flags (Upper nibble: Reserved, Lower nibble: User defined)
+4-31: Payload
+
+Ports 14 and 15 are reserved
+
+Transmission:
+1) Stop listening
+2) Enable listening on pipe 0 for ACK packet
+3) Set TX MAC and RX0 MAC to network mac with LSB set to the destination address
+4) Disable listening on pipe 0 to avoid sending ACKs to other clients packets
+5) Start listening again
+
+Reception:
+1) Listen on network MAC with LSB set to our own IP (usually on pipe 1)
+
+
+Well-known services (IP:Port):
+IP 0: High priority services
+0:0: Bootloader
+
+IP 1: Normal servers
+1:0: Sensor server
+
+IP 2-4: Reserved by RF host

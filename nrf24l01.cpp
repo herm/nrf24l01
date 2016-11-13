@@ -45,7 +45,7 @@ uint8_t NRF24L01::init() NRF24L01_STATIC_CONST__
         static const uint8_t register_values[] PROGMEM =
         {
             NRF24L01_DEFAULT_CONFIG,
-            nrf_enabled_pipes, //ENAA
+            0b111111, //ENAA: Enabled on all pipes by default
             nrf_enabled_pipes, //EN_RXADDR,
             0b11,     //AW = 5
             0xff,     //15 retransmits, 4ms wait
