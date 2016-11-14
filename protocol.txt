@@ -27,3 +27,5 @@ IP 1: Normal servers
 1:0: Sensor server
 
 IP 2-4: Reserved by RF host
+
+IP 0xfe: Bootloader client

@@ -67,7 +67,7 @@ uint8_t NRF24L01::init() NRF24L01_STATIC_CONST__
         set_speed_power(s2M, dBm_0);
 #endif
         write_reg(NRF24L01_REG::FEATURE, NRF24L01_FEATURE::EN_DPL | NRF24L01_FEATURE::EN_DYN_ACK | NRF24L01_FEATURE::EN_ACK_PAY);
-        write_reg(NRF24L01_REG::DYNPD, nrf_enabled_pipes);
+        write_reg(NRF24L01_REG::DYNPD, 0b111111);
         //State: Standby I
         delay_ms(5);
         #ifdef NRF24L01_MAX_RETRIES
