@@ -22,6 +22,7 @@ Reception:
 Well-known services (IP:Port):
 IP 0: High priority services
 0:0: Bootloader
+0:1: Debug console
 
 IP 1: Normal servers
 1:0: Sensor server
