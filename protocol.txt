@@ -2,7 +2,7 @@ UDP Message:
 Byte, Description:
 0: Source
 1: Destination
-2: Ports
+2: Port
 3: Flags (Upper nibble: Reserved, Lower nibble: User defined)
 4-31: Payload
 
@@ -28,5 +28,8 @@ IP 1: Normal servers
 1:0: Sensor server
 
 IP 2-4: Reserved by RF host
+
+IP 10-0xfd: Clients
+xx:0xfe: Debug input
 
 IP 0xfe: Bootloader client

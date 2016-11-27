@@ -15,13 +15,23 @@ extern char mac[6];
 
 struct __attribute__ ((__packed__)) __attribute__((__may_alias__)) tiny_udp_packet
 {
-    uint8_t size;
+    private:
+    uint8_t size_; // Total size of this packet excluding this field
+    public:
     uint8_t source_ip;
     uint8_t dest_ip;
-    uint8_t ports;
+    uint8_t port;
     uint8_t flags;
-    int8_t payload_bytes_left() const { return max_size() - size; }
-    uint8_t max_size() const { return 28; }
+
+    uint8_t packet_size() const { return size_; }
+    void set_packet_size(uint8_t size) { size_ = size; }
+    uint8_t max_packet_size() const { return 32; }
+    int8_t size_left() const { return max_packet_size() - size_; }
+
+    uint8_t udp_overhead() const { return sizeof(tiny_udp_packet) - sizeof(size_); }
+    uint8_t payload_size() const { return size_ - udp_overhead(); }
+    void set_payload_size(uint8_t size) { size_ = size + udp_overhead(); }
+    uint8_t max_payload_size() const { return max_packet_size() - udp_overhead(); }
 };
 
 static inline void init_udp()
@@ -37,6 +47,6 @@ void send_udp_packet_nowait(tiny_udp_packet &buf, uint8_t ip, uint8_t port);
  * Note: This function might modify buf even if no valid packet is received!
  * Only rely on data in buf if this function returns true.
  */
-bool receive_udp_packet(tiny_udp_packet &buf, uint8_t min_size);
+bool receive_udp_packet(tiny_udp_packet &buf);
 #endif
 #endif // TINYUDP_H

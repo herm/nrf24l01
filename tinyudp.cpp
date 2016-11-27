@@ -12,9 +12,9 @@ static force_inline void send_udp_packet_internal(tiny_udp_packet &buf, uint8_t 
     NRF24L01::set_tx_mac(mac);
     buf.source_ip = device_ip;
     buf.dest_ip = ip;
-    buf.ports = port;
+    buf.port = port;
     buf.flags &= user_flags;
-    NRF24L01::send_packet(&(buf.source_ip), buf.size + sizeof(tiny_udp_packet) -  sizeof(buf.size));
+    NRF24L01::send_packet(&(buf.source_ip), buf.packet_size());
 }
 
 bool send_udp_packet(tiny_udp_packet &buf, uint8_t ip, uint8_t port)
@@ -31,11 +31,11 @@ void send_udp_packet_nowait(tiny_udp_packet &buf, uint8_t ip, uint8_t port)
     send_udp_packet_internal(buf, ip, port);
 }
 
-bool receive_udp_packet(tiny_udp_packet &buf, uint8_t min_size)
+bool receive_udp_packet(tiny_udp_packet &buf)
 {
     uint8_t size = NRF24L01::read_payload(&buf.source_ip);
-    if (size < min_size || (buf.flags & protocol_flags) || buf.dest_ip != device_ip) return false;
-    buf.size = size - (sizeof(tiny_udp_packet) - sizeof(buf.size));
+    buf.set_packet_size(size);
+    if (size < sizeof(tiny_udp_packet) || (buf.flags & protocol_flags) || buf.dest_ip != device_ip) return false;
     return true;
 }
 #endif
