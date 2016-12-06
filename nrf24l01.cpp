@@ -150,11 +150,7 @@ void NRF24L01::send_packet(const void *data, uint_fast8_t length)
     // State: TX Mode followed by Standby I
 }
 
-#ifdef NRF24L01_ONLY_DYN_PLD
-uint_fast8_t NRF24L01::read_payload(void *buffer) NRF24L01_STATIC_CONST__
-#else
-uint_fast8_t NRF24L01::read_payload(void *buffer, uint8_t length) NRF24L01_STATIC_CONST__
-#endif
+uint_fast8_t NRF24L01::read_payload(void *buffer, uint8_t max_length) NRF24L01_STATIC_CONST__
 {
     uint8_t *buf = reinterpret_cast<uint8_t *>(buffer);
     //Note: Using the status from RX_PAYLOAD is not possible. Even if it tells you
@@ -164,23 +160,16 @@ uint_fast8_t NRF24L01::read_payload(void *buffer, uint8_t length) NRF24L01_STATI
     if ((status_ & NRF24L01_STATUS::RX_FIFO_EMPTY) == NRF24L01_STATUS::RX_FIFO_EMPTY) {
         return 0;
     }
-#ifdef NRF24L01_ONLY_DYN_PLD
-    uint8_t length;
+    csn0();
+    spiwrite(NRF24L01_CMD::R_RX_PL_WID);
+    uint8_t length = spiwrite(0);
+    csn1();
+    if (length > max_length)
     {
-#else
-    if (length == 0)
-    {
-#endif
-        csn0();
-        spiwrite(NRF24L01_CMD::R_RX_PL_WID);
-        length = spiwrite(0);
-        csn1();
-        if (length > 32)
-        {
-            flush_rx();
-            return 0;
-        }
+        flush_rx();
+        return 0;
     }
+
     csn0();
     spiwrite(NRF24L01_CMD::R_RX_PAYLOAD);
     for (unsigned i=0; i<length; i++)

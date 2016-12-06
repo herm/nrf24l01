@@ -1,7 +1,8 @@
 #ifndef NRF24L01_HPP
 #define NRF24L01_HPP
 
-/* Possible defines:
+/* Limitations: Only dynamic payload length is supported.
+ * Possible defines:
  * NRF24L01_STATIC: Make all functions static to reduce code size. Implies that the SPI module is static as well.
  * NRF24L01_PORT_CE:  Required for NRF24L01_STATIC
  * NRF24L01_PIN_CE:   Required for NRF24L01_STATIC
@@ -124,8 +125,6 @@ static force_inline uint8_t address_width(uint8_t bytes)
 #define NRF24L01_STATIC_CONST__ const
 #endif
 
-#define NRF24L01_ONLY_DYN_PLD
-
 class NRF24L01
 {
 public:
@@ -163,12 +162,8 @@ public:
     NRF24L01_STATIC__ void start_receive();
     NRF24L01_STATIC__ force_inline void end_receive() NRF24L01_STATIC_CONST__ { ce0(); }
     NRF24L01_STATIC__ void send_packet(const void *data, uint_fast8_t length);
-    /** Returns number of bytes read or 0 if no packet is available. Buffer must be long enough for the packet. 32 Bytes is always enough. */
-#ifdef NRF24L01_ONLY_DYN_PLD
-    NRF24L01_STATIC__ uint_fast8_t read_payload(void *buffer) NRF24L01_STATIC_CONST__;
-#else
-    NRF24L01_STATIC__ uint_fast8_t read_payload(void *buffer, uint8_t length=0) NRF24L01_STATIC_CONST__;
-#endif
+    /** Returns number of bytes read or 0 if no packet is available.*/
+    NRF24L01_STATIC__ uint_fast8_t read_payload(void *buffer, uint8_t max_length) NRF24L01_STATIC_CONST__;
     NRF24L01_STATIC__ void set_channel(uint_fast8_t channel) NRF24L01_STATIC_CONST__;
     NRF24L01_STATIC__ void set_speed_power(speed_t speed, power_t power) NRF24L01_STATIC_CONST__;
     NRF24L01_STATIC__ void set_tx_mac(char const* mac) NRF24L01_STATIC_CONST__

@@ -31,9 +31,9 @@ void send_udp_packet_nowait(tiny_udp_packet &buf, uint8_t ip, uint8_t port)
     send_udp_packet_internal(buf, ip, port);
 }
 
-bool receive_udp_packet(tiny_udp_packet &buf)
+bool receive_udp_packet(tiny_udp_packet &buf, uint8_t max_length)
 {
-    uint8_t size = NRF24L01::read_payload(&buf.source_ip);
+    uint8_t size = NRF24L01::read_payload(&buf.source_ip, max_length);
     buf.set_packet_size(size);
     if (size < sizeof(tiny_udp_packet) || (buf.flags & protocol_flags) || buf.dest_ip != device_ip) return false;
     return true;

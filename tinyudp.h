@@ -47,6 +47,6 @@ void send_udp_packet_nowait(tiny_udp_packet &buf, uint8_t ip, uint8_t port);
  * Note: This function might modify buf even if no valid packet is received!
  * Only rely on data in buf if this function returns true.
  */
-bool receive_udp_packet(tiny_udp_packet &buf);
+bool receive_udp_packet(tiny_udp_packet &buf, uint8_t max_length);
 #endif
 #endif // TINYUDP_H
