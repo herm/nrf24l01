@@ -7,6 +7,9 @@
 #ifndef device_ip
 #warning "No device_ip defined. Compilation will fail"
 #endif
+#if nrf_enabled_pipes & 0b1
+#warning "Pipe 0 is always enabled. Most likely this is not what you want to do."
+#endif
 
 #define user_flags (0x0f)
 #define protocol_flags (~user_flags)
@@ -40,8 +43,12 @@ static inline void init_udp()
     NRF24L01::set_rx_mac(1, mac);
 }
 
+/* Blocking functions. */
 bool send_udp_packet(tiny_udp_packet &buf, uint8_t ip, uint8_t port);
+
+/* Non-blocking functions. */
 void send_udp_packet_nowait(tiny_udp_packet &buf, uint8_t ip, uint8_t port);
+void listen_for_udp_nowait();
 
 /** Receive an UDP packet in buf.
  * Note: This function might modify buf even if no valid packet is received!

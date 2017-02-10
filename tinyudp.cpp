@@ -6,10 +6,12 @@
 char mac[6] = nrf_mac;
 
 /* Usually only one of send_udp_packet and send_udp_packet_nowait is used. */
-static force_inline void send_udp_packet_internal(tiny_udp_packet &buf, uint8_t ip, uint8_t port)
+void send_udp_packet_nowait(tiny_udp_packet &buf, uint8_t ip, uint8_t port)
 {
+    NRF24L01::stop_receive();
     mac[0] = ip;
     NRF24L01::set_tx_mac(mac);
+    NRF24L01::set_enabled_pipes(0b1);
     buf.source_ip = device_ip;
     buf.dest_ip = ip;
     buf.port = port;
@@ -17,18 +19,18 @@ static force_inline void send_udp_packet_internal(tiny_udp_packet &buf, uint8_t 
     NRF24L01::send_packet(&(buf.source_ip), buf.packet_size());
 }
 
-bool send_udp_packet(tiny_udp_packet &buf, uint8_t ip, uint8_t port)
+void listen_for_udp_nowait()
 {
-    send_udp_packet_internal(buf, ip, port);
-    bool result = NRF24L01::wait_transmit_complete();
-    NRF24L01::start_receive(); //TODO
-    return result;
+    NRF24L01::set_enabled_pipes(nrf_enabled_pipes);
+    NRF24L01::start_receive();
 }
 
-//TOOD: Compiling this function even if it isn't used increases code size by 28 bytes: why?
-void send_udp_packet_nowait(tiny_udp_packet &buf, uint8_t ip, uint8_t port)
+bool send_udp_packet(tiny_udp_packet &buf, uint8_t ip, uint8_t port)
 {
-    send_udp_packet_internal(buf, ip, port);
+    send_udp_packet_nowait(buf, ip, port);
+    bool result = NRF24L01::wait_transmit_complete();
+    listen_for_udp_nowait();
+    return result;
 }
 
 bool receive_udp_packet(tiny_udp_packet &buf, uint8_t max_length)
