@@ -125,6 +125,10 @@ static force_inline uint8_t address_width(uint8_t bytes)
 #define NRF24L01_STATIC_CONST__ const
 #endif
 
+#ifndef nrf_enabled_pipes
+    #error nrf_enabled_pipes must be defined in the config file, e.g. #define nrf_enabled_pipes 0b000011
+#endif
+
 class NRF24L01
 {
 public:
@@ -160,7 +164,7 @@ public:
     NRF24L01_STATIC__ uint8_t read_reg(uint_fast8_t reg_nr) NRF24L01_STATIC_CONST__;
     NRF24L01_STATIC__ uint_fast8_t status() NRF24L01_STATIC_CONST__;
     NRF24L01_STATIC__ void start_receive();
-    NRF24L01_STATIC__ force_inline void end_receive() NRF24L01_STATIC_CONST__ { ce0(); }
+    NRF24L01_STATIC__ force_inline void stop_receive() NRF24L01_STATIC_CONST__ { ce0(); }
     NRF24L01_STATIC__ void send_packet(const void *data, uint_fast8_t length);
     /** Returns number of bytes read or 0 if no packet is available.*/
     NRF24L01_STATIC__ uint_fast8_t read_payload(void *buffer, uint8_t max_length) NRF24L01_STATIC_CONST__;

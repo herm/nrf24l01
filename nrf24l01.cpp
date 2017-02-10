@@ -25,9 +25,6 @@ uint8_t NRF24L01::init() NRF24L01_STATIC_CONST__
 {
     csn1();
     ce0();
-#ifndef nrf_enabled_pipes
-    #define nrf_enabled_pipes 0b000011
-#endif
 #ifndef PROGMEM
 #define PROGMEM
 #define pgm_read_byte(x) (*(x))
@@ -59,8 +56,8 @@ uint8_t NRF24L01::init() NRF24L01_STATIC_CONST__
         }
 #else
         write_reg(NRF24L01_REG::CONFIG, NRF24L01_DEFAULT_CONFIG); //Power up (max. 4ms)
-        write_reg(NRF24L01_REG::EN_AA, nrf_enabled_pipes);
-        write_reg(NRF24L01_REG::EN_RXADDR, nrf_enabled_pipes & 0xFE);
+        write_reg(NRF24L01_REG::EN_AA, 0b111111);
+        write_reg(NRF24L01_REG::EN_RXADDR, nrf_enabled_pipes);
         write_reg(NRF24L01_REG::SETUP_AW, NRF24L01_AW::address_width(5));
         write_reg(NRF24L01_REG::STATUS, NRF24L01_STATUS::MAX_RT| NRF24L01_STATUS::RX_DR | NRF24L01_STATUS::TX_DS);
         write_reg(NRF24L01_REG::RF_CH, nrf_channel);
