@@ -1,2 +1,3 @@
-CPPSRC += nrf24l01/nrf24l01.cpp nrf24l01/tinyudp.cpp
-EXTRAINCDIRS += nrf24l01
+NRF24L01_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
+CPPSRC += $(NRF24L01_DIR)nrf24l01.cpp $(NRF24L01_DIR)tinyudp.cpp
+EXTRAINCDIRS += $(NRF24L01_DIR)
