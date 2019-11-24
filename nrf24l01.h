@@ -118,6 +118,10 @@ static force_inline uint8_t address_width(uint8_t bytes)
 #define NRF24L01_DEFAULT_CONFIG (NRF24L01_CONFIG::PWR_UP | NRF24L01_CONFIG::CRC_2BYTE | NRF24L01_CONFIG::EN_CRC)
 #endif
 
+#ifndef NRF24L01_DEFAULT_ENABLED_PIPES
+#define NRF24L01_DEFAULT_ENABLED_PIPES 0b01
+#endif
+
 #ifdef NRF24L01_STATIC
 #define NRF24L01_STATIC__ static
 #define NRF24L01_STATIC_CONST__
@@ -125,10 +129,6 @@ static force_inline uint8_t address_width(uint8_t bytes)
 #else
 #define NRF24L01_STATIC__
 #define NRF24L01_STATIC_CONST__ const
-#endif
-
-#ifndef nrf_enabled_pipes
-    #error nrf_enabled_pipes must be defined in the config file, e.g. #define nrf_enabled_pipes 0b000011
 #endif
 
 class NRF24L01

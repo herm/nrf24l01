@@ -43,10 +43,10 @@ uint8_t NRF24L01::init() NRF24L01_STATIC_CONST__
         {
             NRF24L01_DEFAULT_CONFIG,
             0b111111, //ENAA: Enabled on all pipes by default
-            nrf_enabled_pipes, //EN_RXADDR,
+            NRF24L01_DEFAULT_ENABLED_PIPES, //EN_RXADDR,
             0b11,     //AW = 5
             0xff,     //15 retransmits, 4ms wait
-            nrf_channel,
+            NRF24L01_DEFAULT_CHANNEL,
             s2M|dBm_0,
             NRF24L01_STATUS::MAX_RT | NRF24L01_STATUS::RX_DR | NRF24L01_STATUS::TX_DS //clear flags
         };
@@ -57,10 +57,10 @@ uint8_t NRF24L01::init() NRF24L01_STATIC_CONST__
 #else
         write_reg(NRF24L01_REG::CONFIG, NRF24L01_DEFAULT_CONFIG); //Power up (max. 4ms)
         write_reg(NRF24L01_REG::EN_AA, 0b111111);
-        write_reg(NRF24L01_REG::EN_RXADDR, nrf_enabled_pipes);
+        write_reg(NRF24L01_REG::EN_RXADDR, NRF24L01_DEFAULT_ENABLED_PIPES);
         write_reg(NRF24L01_REG::SETUP_AW, NRF24L01_AW::address_width(5));
         write_reg(NRF24L01_REG::STATUS, NRF24L01_STATUS::MAX_RT| NRF24L01_STATUS::RX_DR | NRF24L01_STATUS::TX_DS);
-        write_reg(NRF24L01_REG::RF_CH, nrf_channel);
+        write_reg(NRF24L01_REG::RF_CH, NRF24L01_DEFAULT_CHANNEL);
         set_speed_power(s2M, dBm_0);
 #endif
         write_reg(NRF24L01_REG::FEATURE, NRF24L01_FEATURE::EN_DPL | NRF24L01_FEATURE::EN_DYN_ACK | NRF24L01_FEATURE::EN_ACK_PAY);
