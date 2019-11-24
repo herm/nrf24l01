@@ -1,6 +1,6 @@
 #include "nrf24l01.h"
 
-#include <inttypes.h>
+#include <stdint.h>
 
 #include "config.h"
 #include "spi.h"

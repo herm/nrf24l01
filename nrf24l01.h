@@ -13,9 +13,11 @@
  * NRF24L01_DEFAULT_CONFIG: Default config options
  */
 
-#include <inttypes.h>
+#include <stdint.h>
 #include "config.h"
+#ifndef NRF24L01_STATIC
 #include "pin.h"
+#endif
 #include "spi.h"
 
 namespace NRF24L01_CMD
