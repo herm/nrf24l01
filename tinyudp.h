@@ -55,7 +55,7 @@ void listen_nowait();
  * Note: This function might modify buf even if no valid packet is received!
  * Only rely on data in buf if this function returns true.
  */
-bool receive_packet(Packet &buf, uint8_t max_length);
+bool receive(Packet &buf, uint8_t max_length);
 }
 #endif
 #endif // TINYUDP_H
